@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'maven:3.8.5-openjdk-11'
-      args '-v $HOME/.m2/root/.m2'
-    }
-  }
+  agent any
 
   environment {
     HARBOR_REGISTRY = 'harbor.server.thweb.click'
@@ -23,6 +18,13 @@ pipeline {
     }
 
     stage('Build Maven') {
+      echo("Build Maven with Agent Docker")
+      {
+        docker {
+          image 'maven:3.8.5-openjdk-11'
+          args '-v $HOME/.m2/root/.m2'
+        }
+      }
       steps {
         sh 'mvn clean package -DskipTests'
       }
