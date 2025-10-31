@@ -16,15 +16,14 @@ pipeline {
         checkout scm
       }
     }
-  }
 
-  stages {
     stage('Build Mave') {
       steps {
         sh 'mvn -B -DskipTests clean package'
       }
     }
   }
+
 
   post {
     success {
