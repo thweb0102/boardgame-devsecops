@@ -53,7 +53,7 @@ pipeline {
         }
       }
       steps {
-        sh 'trivy fs --format table -o trivy-fs.html'
+        sh 'trivy fs --format table -o trivy-fs.html .'
       }
     }
   }
