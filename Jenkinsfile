@@ -74,10 +74,10 @@ pipeline {
         environment {
           SONAR_USER_HOME = "${WORKSPACE}/.sonar"
         }
-        steps {
-          withSonarQubeEnv('SonarQube') {
-            sh 'sonar-scanner'
-          }
+      }
+      steps {
+        withSonarQubeEnv('SonarQube') {
+          sh 'sonar-scanner'
         }
       }
     }
