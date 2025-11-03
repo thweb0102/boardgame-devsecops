@@ -10,51 +10,64 @@ pipeline {
   }
 
   stages {
+
     stage('Checkout') {
+
       steps {
         echo '📥 Checking out code from GitLab...'
         checkout scm
       }
+
     }
 
     stage('Build Maven') {
+
       agent {
         docker {
           image 'maven:3.8.5-openjdk-11'
           args '-v $HOME/.m2:/root/.m2'
         }
       }
+      
       steps {
         sh 'mvn clean package -DskipTests'
       }
+
     }
 
     stage('Test') {
+
       agent {
         docker {
           image 'maven:3.8.5-openjdk-11'
         }
       }
+
       steps {
         sh 'mvn test'
       }
+
       post {
         always {
           junit '**/target/surefire-reports/*.xml'
         }
       }
+
     }
 
     stage('Trivy FS Scan') {
+
       agent {
         docker {
           image 'aquasec/trivy:latest'
           args '--entrypoint="" -v /tmp/trivy-cache:/.cache'
         }
       }
+
       steps {
         sh 'trivy fs --format table -o trivy-fs.html .'
       }
+
       post {
         always {
           publishHTML ([
@@ -64,22 +77,27 @@ pipeline {
           ])
         }
       }
+
     }
 
     stage('SonarQube Check') {
+
       agent {
         docker {
           image 'sonarsource/sonar-scanner-cli:latest'
         }
-        environment {
-          SONAR_USER_HOME = "${WORKSPACE}/.sonar"
-        }
       }
+
+      environment {
+        SONAR_USER_HOME = "${WORKSPACE}/.sonar"
+      }
+
       steps {
         withSonarQubeEnv('SonarQube') {
           sh 'sonar-scanner'
         }
       }
+
     }
   }
 
