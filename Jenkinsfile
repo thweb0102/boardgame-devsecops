@@ -55,6 +55,7 @@ pipeline {
       steps {
         sh 'trivy fs --format table -o trivy-fs.html'
       }
+    }
   }
 
   post {
