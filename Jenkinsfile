@@ -56,19 +56,24 @@ pipeline {
     }
 
     stage('SonarQube Analysis') {
-      steps {
-        script {
-          def scannerHome = tool 'SonarQubeScanner'
-          withSonarQubeEnv('SonarQube') {
-            sh """
-              ${scannerHome}/bin/sonar-scanner \
-                -Dsonar.projectKey=boardgame \
-                -Dsonar.sources=src/main/java \
-                -Dsonar.java.binaries=target/classes \
-                -Dsonar.junit.reportPaths=target/surefire-reports
-            """
-          }
+      agent {
+        docker {
+          image 'sonarsource/sonar-scanner-cli:latest'
         }
+      }
+      environment {
+        SONAR_HOST_URL = 'http://sonarqube.internal:9000'
+        SONAR_TOKEN = credentials('sonarqube-token')
+      }
+      steps {
+        sh """
+          sonar-scanner \
+            -Dsonar.projectKey=boardgame \
+            -Dsonar.sources=src/main/java \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.host.url=\${SONAR_HOST_URL} \
+            -Dsonar.login=\${SONAR_TOKEN}
+        """
       }
     }
 
