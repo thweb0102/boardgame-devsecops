@@ -2,6 +2,7 @@ pipeline {
   agent any
 
   environment {
+
     // Image Config
     IMAGE_NAME = 'boardgame'
     IMAGE_TAG = '${BUILD_NUMBER}'
@@ -18,6 +19,7 @@ pipeline {
     SONAR_HOST_URL = 'http://sonarqube.internal:9000'
     SONAR_TOKEN = credentials('sonarqube-token')
     SONAR_CACHE = "/tmp/jenkins/sonar-cache"
+    
   }
 
   stages {
