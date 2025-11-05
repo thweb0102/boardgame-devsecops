@@ -118,7 +118,7 @@ pipeline {
       agent {
         docker {
           image "aquasec/trivy:latest"
-          args "--entrypoint="" -v ${TRIVY_CACHE}:/.cache"
+          args '--entrypoint="" -v ${TRIVY_CACHE}:/.cache'
         }
       }
 
