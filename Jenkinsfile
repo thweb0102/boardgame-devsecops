@@ -30,6 +30,7 @@ pipeline {
       }
       
       steps {
+        echo 'Build Maven from inside docker'
         sh 'mvn clean package -DskipTests'
       }
 
@@ -44,6 +45,7 @@ pipeline {
       }
 
       steps {
+        echo 'Test Maven from inside docker'
         sh 'mvn test'
       }
 
@@ -67,6 +69,7 @@ pipeline {
         SONAR_TOKEN = credentials('sonarqube-token')
       }
       steps {
+        echo 'SonarQube Analysis'
         withSonarQubeEnv('SonarQube') {
           sh """
             sonar-scanner \
@@ -82,6 +85,7 @@ pipeline {
 
     stage('Quality Gate') {
       steps {
+        echo 'Wait for QualityGate trigger webhook'
         timeout(time: 5, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
         }
@@ -98,6 +102,7 @@ pipeline {
       }
 
       steps {
+        echo 'Trivy FileSystem scan'
         sh 'trivy fs --format table -o trivy-fs.html .'
       }
 
@@ -111,6 +116,14 @@ pipeline {
         }
       }
 
+    }
+
+    stage('Build Docker Image') {
+      step {
+        sh """
+        docker build -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} .
+        """
+      }
     }
   }
 
