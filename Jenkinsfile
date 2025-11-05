@@ -160,7 +160,8 @@ pipeline {
       steps {
         echo "Build Docker Image"
         sh """
-          docker build \
+          docker build \ 
+            -f Dockerfile-jenkins-optimize \
             -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} \
             -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest \
             .
@@ -226,7 +227,15 @@ pipeline {
       }
     }
 
-  }
+    stage("Deploy to K8s") {
+      steps {
+        sh """
+          kubectl app
+        """
+      }
+    }
+
+  } 
 
   post {
 

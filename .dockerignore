@@ -1,0 +1,7 @@
+.git
+.gitlab
+.gitignore
+target/*
+!target/*.jar
+node_modules
+.DS_Store
