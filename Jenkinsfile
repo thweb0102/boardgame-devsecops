@@ -214,7 +214,7 @@ pipeline {
       steps {
         echo "Push to Harbor"
         sh """
-          echo \${HARBOR_CRED_PSW} | docker login ${HARBOR_REGISTRY} \
+          echo "${HARBOR_CRED_PSW}" | docker login ${HARBOR_REGISTRY} \
             -u \${HARBOR_CREDS_USR} \
             --password-stdin
 
