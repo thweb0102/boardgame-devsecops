@@ -7,6 +7,7 @@ pipeline {
     IMAGE_NAME = 'boardgame'
     IMAGE_TAG = '${BUILD_NUMBER}'
     HARBOR_CREDS = credentials('jenkins-harbor-credentials')
+    TRIVY_CACHE = '/tmp/trivy-cache'
   }
 
   stages {
@@ -97,7 +98,7 @@ pipeline {
       agent {
         docker {
           image 'aquasec/trivy:latest'
-          args '--entrypoint="" -v /tmp/trivy-cache:/.cache'
+          args '--entrypoint="" -v ${TRIVY_CACHE}:/.cache'
         }
       }
 
@@ -134,7 +135,7 @@ pipeline {
       agent {
         docker {
           image 'aquasec/trivy:latest'
-          args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/trivy-cache:/.cache'
+          args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker.sock -v ${TRIVY_CACHE}:/.cache'
         }
       }
 
