@@ -102,7 +102,7 @@ pipeline {
       }
 
       steps {
-        echo 'Trivy FileSystem scan'
+        echo 'Trivy FileSystem Scan'
         sh 'trivy fs --format table -o trivy-fs.html .'
       }
 
@@ -119,11 +119,38 @@ pipeline {
     }
 
     stage('Build Docker Image') {
+
       steps {
+        echo "Build Docker Image"
         sh """
         docker build -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} .
         """
       }
+
+    }
+
+    stage('Trivy Image Scan') {
+
+      agent {
+        docker {
+          image 'aquasec/trivy:latest'
+          args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker/sock'
+        }
+      }
+
+      steps {
+
+        echo "Trivy Image Scan from inside docker with docker.socket mount"
+        sh """
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --format table
+            -o trivy-image.html \
+            ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
+        """
+
+      }
+
     }
 
   }
@@ -135,9 +162,9 @@ pipeline {
     failure {
       echo "❌ Pipeline failed"
     }
-    // always {
-    //   echo '🧹 Cleaning workspace'
-    //   cleanWs()
-    // }
+    always {
+      echo '🧹 Cleaning workspace'
+      cleanWs()
+    }
   }
 }
