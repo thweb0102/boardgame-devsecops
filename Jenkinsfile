@@ -16,12 +16,12 @@ pipeline {
     HARBOR_CREDS = credentials("jenkins-harbor-credentials")
 
     // Trivy Config
-    TRIVY_CACHE = "${CACHE_BASE}/trivy-cache"
+    TRIVY_CACHE = "${CACHE_BASE}/trivy"
 
     // SonarQube Config
     SONAR_HOST_URL = "http://sonarqube.internal:9000"
     SONAR_TOKEN = credentials("sonarqube-token")
-    SONAR_CACHE = "${CACHE_BASE}/sonar-cache"
+    SONAR_CACHE = "${CACHE_BASE}/sonar"
     
   }
 
@@ -175,13 +175,13 @@ pipeline {
   post {
     success {
       echo "✅ Pipeline completed succesfully!!"
+      echo "🧹 Cleaning workspace"
+      cleanWs()
     }
     failure {
       echo "❌ Pipeline failed"
     }
     always {
-      echo "🧹 Cleaning workspace"
-      cleanWs()
     }
   }
 }
