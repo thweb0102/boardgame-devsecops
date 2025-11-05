@@ -8,7 +8,7 @@ COPY . .
 RUN mvn clean package -DskipTests=true
 
 #----- Stage 2 -----
-FROM openjdk:17-alpine AS deployer
+FROM eclipse-temurin:17-jdk-alpine AS deployer
 
 COPY --from=builder /app/target/*.jar /app/target/app.jar
 
