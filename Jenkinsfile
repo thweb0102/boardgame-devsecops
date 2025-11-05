@@ -110,7 +110,10 @@ pipeline {
       agent {
         docker {
           image "aquasec/trivy:latest"
-          args '--entrypoint="" -u jenkins:jenkins -v ${TRIVY_CACHE}:/.cache'
+          args """
+            --entrypoint="" -u $(id -u jenkins):$(id -g jenkins) 
+            -v ${TRIVY_CACHE}:/.cache
+          """
         }
       }
 
@@ -148,7 +151,7 @@ pipeline {
         docker {
           image "aquasec/trivy:latest"
           args """
-            --entrypoint="" -u jenkins:jenkins 
+            --entrypoint="" -u $(id -u jenkins):$(id -g jenkins) 
             -v /var/run/docker.sock:/var/run/docker.sock 
             -v ${TRIVY_CACHE}:/.cache
           """
