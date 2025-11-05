@@ -111,7 +111,7 @@ pipeline {
         docker {
           image "aquasec/trivy:latest"
           args """
-            --entrypoint="" -u $(id -u jenkins):$(id -g jenkins) 
+            --entrypoint="" -u $(id -u jenkins):$(id -g jenkins) \
             -v ${TRIVY_CACHE}:/.cache
           """
         }
