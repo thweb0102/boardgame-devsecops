@@ -177,7 +177,6 @@ pipeline {
           image "aquasec/trivy:latest"
           args """
             --entrypoint='' \
-            # --exit-code 1             stage fail if fail security scan \
             --group-add 999 \
             -v /var/run/docker.sock:/var/run/docker.sock:ro \
             -v ${TRIVY_CACHE}:/home/scanner/.cache
@@ -194,10 +193,19 @@ pipeline {
             --severity HIGH,CRITICAL \
             --format table \
             -o trivy-image.html \
-            # --exit-code 1     if needed
             ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
         """
 
+      }
+
+      post {
+        always {
+          publishHTML([
+            reportDir: '.',
+            reportFiles: 'trivy-image.html',
+            reportName: 'Trivy Image Report'
+          ])
+        }
       }
 
     }
