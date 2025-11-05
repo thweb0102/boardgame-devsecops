@@ -99,7 +99,7 @@ pipeline {
       }
 
       steps {
-        echo "SonarQube Analysis"
+        echo "Running  SonarQube Analysis"
         withSonarQubeEnv("SonarQube") {
           sh """
             sonar-scanner \
@@ -136,10 +136,10 @@ pipeline {
         echo "Scanning filesystem"
         sh """
           trivy fs \
-          --cache-dir /home/scanner/.cache \
-          --format table \
-          -o trivy-fs.html \
-          .
+            --cache-dir /home/scanner/.cache \
+            --format table \
+            -o trivy-fs.html \
+            .
         """
       }
 
@@ -160,18 +160,28 @@ pipeline {
       steps {
         echo "Build Docker Image"
         sh """
-        docker build -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} .
+          docker build \
+            # --label commit,build number, build user if needed
+            -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} \
+            -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest \
+            .
         """
       }
 
     }
 
-    stage("Trivy Image Scan") {
+    stage("Security Scan - Image") {
 
       agent {
         docker {
           image "aquasec/trivy:latest"
-          args "--entrypoint=\"\" --group-add 999 -v /var/run/docker.sock:/var/run/docker.sock -v ${TRIVY_CACHE}:/.cache"
+          args """
+            --entrypoint='' \
+            # --exit-code 1             stage fail if fail security scan \
+            --group-add 999 \
+            -v /var/run/docker.sock:/var/run/docker.sock:ro \
+            -v ${TRIVY_CACHE}:/home/scanner/.cache
+          """
         }
       }
 
@@ -180,9 +190,11 @@ pipeline {
         echo "Trivy Image Scan from inside docker with docker.socket mount"
         sh """
           trivy image \
+            --cache-dir /home/scanner/.cache \
             --severity HIGH,CRITICAL \
             --format table \
             -o trivy-image.html \
+            # --exit-code 1     if needed
             ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
         """
 
