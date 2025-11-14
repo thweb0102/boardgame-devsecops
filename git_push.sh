@@ -1,13 +1,39 @@
 #!/bin/bash
 
-# Default branch là branch hiện tại
+# Get current branch
 branch=$(git rev-parse --abbrev-ref HEAD)
-
 datenow=$(date +%d/%m/%y-%H:%M:%S)
 
-# Thực hiện commit và push
+# Show current status
+echo "=== Git Push Script ==="
+echo "Branch: $branch"
+echo "Commit message: $datenow"
+echo ""
+echo "Remote repositories:"
+git remote -v | grep push
+
+echo ""
+read -p "Push to all remotes? (y/n): " confirm
+
+if [[ $confirm != "y" && $confirm != "Y" ]]; then
+    echo "Push cancelled"
+    exit 0
+fi
+
+# Perform git operations
 git add .
 git commit -m "$datenow"
 
+# Push to each remote
+for remote in $(git remote); do
+    echo ""
+    echo "→ Pushing to $remote/$branch..."
+    if git push $remote $branch --force; then
+        echo "✓ Successfully pushed to $remote/$branch"
+    else
+        echo "✗ Failed to push to $remote/$branch"
+    fi
+done
 
-git remote | xargs -I {} bash -c 'git push {} $branch --force && echo "Changes pushed to {}/$branch branch"'
+echo ""
+echo "=== Push completed ==="

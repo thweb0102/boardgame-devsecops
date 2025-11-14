@@ -226,6 +226,7 @@ pipeline {
           docker logout ${HARBOR_REGISTRY}
         """
       }
+      
     }
 
     stage("Deploy to K8s") {
