@@ -235,7 +235,7 @@ pipeline {
             boardgame=${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} \
             -n boardgame
 
-          kubectl rollout status deployment/boardgame -n boardgame --timeout=5m
+          kubectl rollout status deployment/boardgame-release -n boardgame --timeout=5m
         """
       }
     }
