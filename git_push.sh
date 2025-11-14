@@ -12,7 +12,9 @@ echo ""
 echo "Remote repositories:"
 git remote -v | grep push
 
+
 echo ""
+echo "------------------------------------------"
 if [[ -n "$1" && "$1" == "-y" ]]; then
   confirm="y"
 else 
@@ -22,8 +24,9 @@ else
       exit 0
   fi
 fi
-
 echo "------------------------------------------"
+
+
 # Perform git operations
 git add .
 git commit -m "$datenow"
