@@ -1,98 +1,59 @@
-# Default values for boardgame chart
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Global settings
+replicaCount: 2
 
-# ============================================================
-# IMAGE CONFIGURATION
-# ============================================================
 image:
-  # Docker image repository
   repository: harbor.server.thweb.click/boardgame-devsecops/app
-  
-  # Image pull policy (Always, IfNotPresent, Never)
   pullPolicy: Always
-  
-  # Overrides the image tag whose default is the chart appVersion
   tag: "latest"
 
-# Image pull secrets for private registries
 imagePullSecrets:
   - name: harbor-registry
 
-# ============================================================
-# DEPLOYMENT CONFIGURATION
-# ============================================================
-# Number of pod replicas
-replicaCount: 3
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
 
-# Resource limits and requests
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: boardgame.app.thweb.click  # Override per env
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: boardgame-tls
+      hosts:
+        - boardgame.app.thweb.click
 
-# Liveness probe configuration
-livenessProbe:
-  httpGet:
-    path: /
-    port: 8080
-  initialDelaySeconds: 45
-  periodSeconds: 10
-
-# Readiness probe configuration
-readinessProbe:
-  httpGet:
-    path: /
-    port: 8080
-  initialDelaySeconds: 30
-  periodSeconds: 5
-
-# Environment variables for the application
+# Application configs
 env:
   springDatasourceUrl: "jdbc:h2:mem:testdb"
   springH2ConsoleEnabled: "true"
 
-# ============================================================
-# SERVICE CONFIGURATION
-# ============================================================
-service:
-  # Service type (ClusterIP, NodePort, LoadBalancer)
-  type: ClusterIP
-  
-  # Service port (external port)
-  port: 80
-  
-  # Target port (container port)
-  targetPort: 8080
+# Default resources (will be overridden per env)
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
 
-# ============================================================
-# INGRESS CONFIGURATION
-# ============================================================
-ingress:
-  # Enable or disable ingress
-  enabled: true
-  
-  # Ingress class name
-  className: nginx
-  
-  # Hostname for the ingress
-  host: boardgame.app.thweb.click
-  
-  # TLS configuration
-  tls:
-    enabled: true
-    secretName: boardgame-tls
-  
-  # Ingress annotations
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-
-# ============================================================
-# NAMESPACE
-# ============================================================
-# Namespace will be taken from helm install --namespace flag
-# If not specified, defaults to "default"
+probes:
+  liveness:
+    httpGet:
+      path: /
+      port: 8080
+    initialDelaySeconds: 45
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 5

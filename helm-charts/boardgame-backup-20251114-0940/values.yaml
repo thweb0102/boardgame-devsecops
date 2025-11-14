@@ -79,7 +79,7 @@ ingress:
   className: nginx
   
   # Hostname for the ingress
-  host: boardgame02.app.thweb.click
+  host: boardgame.app.thweb.click
   
   # TLS configuration
   tls:
