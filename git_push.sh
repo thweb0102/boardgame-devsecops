@@ -24,9 +24,10 @@ else
       exit 0
   fi
 fi
+
+
+echo ""
 echo "------------------------------------------"
-
-
 # Perform git operations
 git add .
 git commit -m "$datenow"
