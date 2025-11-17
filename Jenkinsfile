@@ -31,6 +31,8 @@ pipeline {
 
     stage("Set up") {
       steps {
+        echo "DEBUG: BRANCH_NAME = ${env.BRANCH_NAME}"
+        echo "DEBUG: GIT_BRANCH = ${env.GIT_BRANCH}"
         echo "Set up"
         sh """
           mkdir -p ${MAVEN_CACHE} ${TRIVY_CACHE} ${SONAR_CACHE}
@@ -40,8 +42,6 @@ pipeline {
           docker image prune -a -f --filter "until=168h" || true
         """
       }
-      echo "DEBUG: BRANCH_NAME = ${env.BRANCH_NAME}"
-      echo "DEBUG: GIT_BRANCH = ${env.GIT_BRANCH}"
     }
 
     stage("Checkout") {
