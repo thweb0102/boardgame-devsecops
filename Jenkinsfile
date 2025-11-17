@@ -250,7 +250,7 @@ pipeline {
           def namespace = 'boardgame-dev'
           def valuesFile = 'values-dev.yaml'
 
-          if (env.branchName == 'main' || env.branchName == 'master') {
+          if (branchName == 'main' || branchName == 'master') {
             environment = 'prod'
             namespace = 'boardgame'
             valuesFile = 'values-prod.yaml'
@@ -294,7 +294,6 @@ pipeline {
     failure {
       script {
         echo "❌ Deployment failed! Helm will automatically rollback."
-        sh "helm history boardgame-${environment} -n ${namespace}"
       }
     }
 
