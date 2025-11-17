@@ -279,8 +279,10 @@ pipeline {
     }
 
     failure {
-      echo "❌ Deployment failed! Helm will automatically rollback."
-      sh "helm history boardgame-${environment} -n ${namespace}"
+      script {
+        echo "❌ Deployment failed! Helm will automatically rollback."
+        sh "helm history boardgame-${environment} -n ${namespace}"
+      }
     }
 
     always {
