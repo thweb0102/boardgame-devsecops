@@ -147,6 +147,9 @@ pipeline {
       post {
         always {
           publishHTML ([
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
             reportDir: ".",
             reportFiles: "trivy-fs.html",
             reportName: "Trivy FS Report"
@@ -203,6 +206,9 @@ pipeline {
       post {
         always {
           publishHTML([
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
             reportDir: '.',
             reportFiles: 'trivy-image.html',
             reportName: 'Trivy Image Report'

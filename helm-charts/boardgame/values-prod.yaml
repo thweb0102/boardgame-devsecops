@@ -7,10 +7,12 @@
 # Deploy command:
 #   helm upgrade boardgame-prod . -f values.yaml -f values-prod.yaml
 
+environment: prod
+
 # ============================================================
 # DEPLOYMENT - HA setup with more resources
 # ============================================================
-replicaCount: 3          # High availability (spread across nodes)
+replicaCount: 5         # High availability (spread across nodes)
 
 resources:
   limits:
