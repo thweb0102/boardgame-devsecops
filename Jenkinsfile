@@ -31,8 +31,6 @@ pipeline {
 
     stage("Set up") {
       steps {
-        echo "DEBUG: BRANCH_NAME = ${env.BRANCH_NAME}"
-        echo "DEBUG: GIT_BRANCH = ${env.GIT_BRANCH}"
         echo "Set up"
         sh """
           mkdir -p ${MAVEN_CACHE} ${TRIVY_CACHE} ${SONAR_CACHE}
@@ -234,6 +232,19 @@ pipeline {
     stage("Deploy to K8s") {
       steps {
         script {
+          
+          
+          
+          //GIT_BRANCH
+          def gitBranch = env.GIT_BRANCH ?: ''
+          def branchName = gitBranch.replaceAll()
+
+          echo "=== Branch Detection ==="
+          echo "GIT_BRANCH: ${gitBranch}"
+          echo "Extracted branch: ${branchName}"
+
+
+
           // Determine environment based on branch
           def environment = 'dev'
           def namespace = 'boardgame-dev'
