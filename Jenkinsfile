@@ -40,6 +40,8 @@ pipeline {
           docker image prune -a -f --filter "until=168h" || true
         """
       }
+      echo "DEBUG: BRANCH_NAME = ${env.BRANCH_NAME}"
+      echo "DEBUG: GIT_BRANCH = ${env.GIT_BRANCH}"
     }
 
     stage("Checkout") {
@@ -274,7 +276,7 @@ pipeline {
 
     success {
       echo "✅ Pipeline completed succesfully!!"
-      echo "🧹 Cleaning workspace"
+      // echo "🧹 Cleaning workspace"
       // cleanWs()
     }
 
@@ -286,7 +288,7 @@ pipeline {
     }
 
     always {
-      echo "THE END"
+      echo "=== THE END ==="
     }
 
   }
