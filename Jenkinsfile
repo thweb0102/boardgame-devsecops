@@ -290,7 +290,6 @@ pipeline {
         }
       }
     }
-
   } 
 
   post {
