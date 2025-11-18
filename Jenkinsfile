@@ -1,6 +1,20 @@
 pipeline {
   agent any
 
+  options {
+    // Build timeout
+    timeout(time: 30, unit: 'MINUTES')
+    
+    // Disable concurrent builds per branch
+    disableConcurrentBuilds()
+    
+    // Timestamp logs
+    timestamps()
+    
+    // ANSI color output
+    ansiColor('xterm')
+  }
+
   environment {
 
 
