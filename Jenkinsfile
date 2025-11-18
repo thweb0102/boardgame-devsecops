@@ -302,8 +302,8 @@ pipeline {
 
     success {
       echo "✅ Pipeline completed succesfully!!"
-      // echo "🧹 Cleaning workspace"
-      // cleanWs()
+      echo "🧹 Cleaning workspace"
+      cleanWs()
     }
 
     failure {
