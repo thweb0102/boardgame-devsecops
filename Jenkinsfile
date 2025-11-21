@@ -19,7 +19,7 @@ pipeline {
   
     
     // Retry on agent failure
-    retry(2)
+    // retry(2)
 
   }
 
@@ -47,7 +47,10 @@ pipeline {
     // SonarQube Config || Config on Jenkins UI -> System -> SonarQube Server
     // SONAR_HOST_URL = "http://sonarqube.internal:9000"
     // SONAR_TOKEN = credentials("sonarqube-token")
-    
+
+    // GitOps Repo
+    GITOPS_REPO = "https://gitlab.server.thweb.click/thweb102/boardgame-gitops.git"
+    GITOPS_CREDS = credentials("jenkins-gitops-write-project-token")
   }
 
   stages {
@@ -55,13 +58,13 @@ pipeline {
     stage("Set up") {
       steps {
         echo "Set up"
-        sh """
+        sh '''
           mkdir -p ${MAVEN_CACHE} ${TRIVY_CACHE} ${SONAR_CACHE}
           chmod -R 775 ${CACHE_BASE}
 
           #Cleanup old images (keep last 5)
           docker image prune -a -f --filter "until=168h" || true
-        """
+        '''
       }
     }
 
@@ -125,12 +128,12 @@ pipeline {
       steps {
         echo "Running  SonarQube Analysis"
         withSonarQubeEnv("SonarQube") {
-          sh """
+          sh '''
             sonar-scanner \
               -Dsonar.projectKey=boardgame \
               -Dsonar.sources=src/main/java \
               -Dsonar.java.binaries=target/classes \
-          """
+          '''
         }
       }
     }
@@ -149,22 +152,22 @@ pipeline {
       agent {
         docker {
           image "aquasec/trivy:latest"
-          args """
+          args '''
             --entrypoint=''  
             -v ${TRIVY_CACHE}:/home/scanner/.cache
-          """
+          '''
         }
       }
 
       steps {
         echo "Scanning filesystem"
-        sh """
+        sh '''
           trivy fs \
             --cache-dir /home/scanner/.cache \
             --format table \
             -o trivy-fs.html \
             .
-        """
+        '''
       }
 
       post {
@@ -186,46 +189,41 @@ pipeline {
 
       steps {
         echo "Build Docker Image"
-        sh """
+        sh '''
           docker build \
             -f Dockerfile-jenkins-optimize \
             -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} \
             -t ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest \
             .
             # --label commit,build number, build user if needed \
-        """
+        '''
       }
 
     }
 
     stage("Security Scan - Image") {
-
       agent {
         docker {
           image "aquasec/trivy:latest"
-          args """
+          args '''
             --entrypoint='' \
             --group-add 999 \
             -v /var/run/docker.sock:/var/run/docker.sock:ro \
             -v ${TRIVY_CACHE}:/home/scanner/.cache
-          """
+          '''
         }
       }
-
       steps {
-
         echo "Trivy Image Scan from inside docker with docker.socket mount"
-        sh """
+        sh '''
           trivy image \
             --cache-dir /home/scanner/.cache \
             --severity HIGH,CRITICAL \
             --format table \
             -o trivy-image.html \
             ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
-        """
-
+        '''
       }
-
       post {
         always {
           publishHTML([
@@ -238,13 +236,12 @@ pipeline {
           ])
         }
       }
-
     }
 
     stage("Push to Registry") {
       steps {
         echo "Push to Harbor"
-        sh """
+        sh '''
           echo "${HARBOR_CREDS_PSW}" | docker login ${HARBOR_REGISTRY} \
             -u '${HARBOR_CREDS_USR}' \
             --password-stdin
@@ -253,73 +250,121 @@ pipeline {
           docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest
 
           docker logout ${HARBOR_REGISTRY}
-        """
+        '''
       }
       
     }
 
-    stage("Deploy to K8s") {
+    stage("Update GitOps Repo") {
       steps {
         script {
-          
-          
-          
-          // Multibranch Branch Detection
-          echo "=== Multibranch Branch Detection ==="
-          echo "BRANCH_NAME: ${env.BRANCH_NAME}"
-          echo "GIT_BRANCH: ${env.GIT_BRANCH}"
+          echo "Updating GitOps repository..."
 
-
-
-          // Determine environment based on branch
+          //Determine environment from branch
           def environment = 'dev'
           def namespace = 'boardgame-dev'
-          def valuesFile = 'values-dev.yaml'
 
-          // PRODUCTION: main or master
           if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') {
             environment = 'prod'
             namespace = 'boardgame'
-            valuesFile = 'values-prod.yaml'
           }
 
-          // STAGING: hotfix branches (future expansion)
-          else if (env.BRANCH_NAME.startsWith('hotfix/')) {
-            environment = 'staging'
-            namespace = 'boardgame-staging'
-            valuesFile = 'values-staging.yaml'
-          }
+          echo "Deploying to ${environment} environment"
 
-          // DEV: all other branches (feature/*, etc)
+          sh '''
+            # Clone GitOps repo
+            rm -rf gitops-repo
+            git clone ${GITIPS_REPO} gitops-repo
+            cd gitops-repo
 
-          echo "Deploying to ${environment} environment (namespace: ${namespace})"
+            # Configure git
+            git config user.email "jenkins@thweb.click"
+            git config user.name "Jenkins CI"
 
-          // Deploy with Helm
-          sh """
-            helm upgrade --install boardgame-${environment} helm-charts/boardgame \
-              -f helm-charts/boardgame/values.yaml \
-              -f helm-charts/boardgame/${valuesFile} \
-              --namespace ${namespace} \
-              --create-namespace \
-              --set image.tag=${IMAGE_TAG} \
-              --atomic \
-              --timeout 5m \
-              --wait
-          """
+            # Update image tag
+            sed -i 's|tag: .*|tag: "${IMAGE_TAG}"|' apps/${environment}/values-override.yaml
 
-          echo "✅ Deployed ${environment} successfully!"
+            # Commit and push
+            git add apps/${environment}/values-override.yaml
+            git commit -m "Update ${environment} image to ${IMAGE_TAG}
+Build: ${BUILD_NUMBER}
+Commit: ${GIT_COMMIT}
+Branch: ${BRANCH_NAME}"
+            
+            # Push using project token
+            git push https://\${GITOPS_CREDS_USR}:\${GITOPS_CREDS_PSW}@gitlab.server.thweb.click/thweb102/boardgame-gitops.git main
 
-          sh """
-            echo "=== Helm Release ==="
-            helm list -n ${namespace}
+            cd ..
+            rm -rf gitops-repo
+          '''
 
-            echo "=== K8s Resources ==="
-            kubectl get all,ingress -n ${namespace}
-          """
+        echo "GitOps repo updated! ArgoCD will sync within 3 minutes"
         }
       }
     }
-  } 
+
+  //   stage("Deploy to K8s") {
+  //     steps {
+  //       script {
+          
+          
+          
+  //         // Multibranch Branch Detection
+  //         echo "=== Multibranch Branch Detection ==="
+  //         echo "BRANCH_NAME: ${env.BRANCH_NAME}"
+  //         echo "GIT_BRANCH: ${env.GIT_BRANCH}"
+
+
+
+  //         // Determine environment based on branch
+  //         def environment = 'dev'
+  //         def namespace = 'boardgame-dev'
+  //         def valuesFile = 'values-dev.yaml'
+
+  //         // PRODUCTION: main or master
+  //         if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') {
+  //           environment = 'prod'
+  //           namespace = 'boardgame'
+  //           valuesFile = 'values-prod.yaml'
+  //         }
+
+  //         // STAGING: hotfix branches (future expansion)
+  //         else if (env.BRANCH_NAME.startsWith('hotfix/')) {
+  //           environment = 'staging'
+  //           namespace = 'boardgame-staging'
+  //           valuesFile = 'values-staging.yaml'
+  //         }
+
+  //         // DEV: all other branches (feature/*, etc)
+
+  //         echo "Deploying to ${environment} environment (namespace: ${namespace})"
+
+  //         // Deploy with Helm
+  //         sh '''
+  //           helm upgrade --install boardgame-${environment} helm-charts/boardgame \
+  //             -f helm-charts/boardgame/values.yaml \
+  //             -f helm-charts/boardgame/${valuesFile} \
+  //             --namespace ${namespace} \
+  //             --create-namespace \
+  //             --set image.tag=${IMAGE_TAG} \
+  //             --atomic \
+  //             --timeout 5m \
+  //             --wait
+  //         '''
+
+  //         echo "✅ Deployed ${environment} successfully!"
+
+  //         sh '''
+  //           echo "=== Helm Release ==="
+  //           helm list -n ${namespace}
+
+  //           echo "=== K8s Resources ==="
+  //           kubectl get all,ingress -n ${namespace}
+  //         '''
+  //       }
+  //     }
+  //   }
+  // } 
 
   post {
 
