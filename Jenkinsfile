@@ -292,7 +292,7 @@ Commit: ${GIT_COMMIT}
 Branch: ${BRANCH_NAME}"
             
             # Push using project token
-            git push https://\${GITOPS_CREDS_USR}:\${GITOPS_CREDS_PSW}@gitlab.server.thweb.click/thweb102/boardgame-gitops.git main
+            git push https://"${GITOPS_CREDS_USR}":$"{GITOPS_CREDS_PSW}"@gitlab.server.thweb.click/thweb102/boardgame-gitops.git main
 
             cd ..
             rm -rf gitops-repo
